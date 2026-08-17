@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta name="referrer" content="no-referrer">
+  <meta name="theme-color" content="#0f172a">
+  <title>Fichier à usage unique</title>
+  <style>
+    *{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;padding:24px;background:linear-gradient(145deg,#07111f,#0f172a 55%,#111827);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#e5e7eb}.card{width:min(100%,560px);padding:32px;border:1px solid #334155;border-radius:22px;background:rgba(15,23,42,.96);box-shadow:0 28px 80px rgba(0,0,0,.45)}.badge{display:inline-flex;align-items:center;gap:8px;padding:7px 11px;border-radius:999px;background:#172033;color:#cbd5e1;font-size:.82rem;font-weight:700}.dot{width:8px;height:8px;border-radius:50%;background:#22c55e}h1{font-size:clamp(1.6rem,5vw,2.15rem);line-height:1.15;margin:20px 0 12px}p{margin:0 0 18px;color:#cbd5e1;line-height:1.6}.warning{padding:14px 16px;border-radius:14px;background:#111827;border:1px solid #263244;color:#94a3b8;font-size:.92rem}.btn{width:100%;margin-top:22px;border:0;border-radius:14px;padding:15px 18px;background:#f8fafc;color:#0f172a;font-size:1rem;font-weight:800;cursor:pointer}.btn:active{transform:translateY(1px)}.btn[disabled]{opacity:.55;cursor:not-allowed}.small{margin-top:16px;font-size:.82rem;color:#64748b;text-align:center}.error{display:none;margin-top:16px;padding:12px 14px;border-radius:12px;background:#3f1518;color:#fecaca;border:1px solid #7f1d1d}
+  </style>
+</head>
+<body>
+  <main class="card">
+    <div class="badge"><span class="dot"></span> Accès sécurisé</div>
+    <h1>Fichier à usage unique</h1>
+    <p>Ce lien permet d’ouvrir le fichier une seule fois. L’accès n’est consommé qu’au moment où tu appuies sur le bouton ci-dessous.</p>
+    <div class="warning">Après une ouverture réussie, ce même lien deviendra définitivement inutilisable.</div>
+    <form id="openForm" method="post">
+      <button id="openButton" class="btn" type="submit">Ouvrir le fichier</button>
+    </form>
+    <div id="error" class="error">Lien invalide ou incomplet.</div>
+    <div class="small">NadDigital · lien protégé</div>
+  </main>
+  <script>
+    (() => {
+      const token = new URLSearchParams(location.search).get('t') || '';
+      const form = document.getElementById('openForm');
+      const button = document.getElementById('openButton');
+      const error = document.getElementById('error');
+      if (!/^[A-Za-z0-9_-]{20,512}$/.test(token)) {
+        button.disabled = true;
+        error.style.display = 'block';
+        return;
+      }
+      form.action = 'https://ugyrgvbfwvmuhsjmjtue.supabase.co/functions/v1/one-time-file?t=' + encodeURIComponent(token);
+      form.addEventListener('submit', () => {
+        button.disabled = true;
+        button.textContent = 'Ouverture…';
+      });
+    })();
+  </script>
+</body>
+</html>
