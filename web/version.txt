@@ -1,0 +1,3 @@
+AnonBox web chat v2
+Dedicated full-screen conversations
+Read state: mark on chat open
