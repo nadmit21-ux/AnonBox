@@ -25,7 +25,10 @@
   </main>
   <script>
     (() => {
-      const token = new URLSearchParams(location.search).get('t') || '';
+      const hash = location.hash.startsWith('#') ? location.hash.slice(1) : location.hash;
+      const hashToken = new URLSearchParams(hash).get('t') || '';
+      const queryToken = new URLSearchParams(location.search).get('t') || '';
+      const token = hashToken || queryToken;
       const form = document.getElementById('openForm');
       const button = document.getElementById('openButton');
       const error = document.getElementById('error');
