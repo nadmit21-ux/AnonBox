@@ -1,0 +1,8 @@
+AnonBox migration diagnostics
+=== migration ===
+Traceback (most recent call last):
+  File "<stdin>", line 9, in <module>
+  File "<string>", line 2
+    from pathlib import Path
+IndentationError: unexpected indent
+=== validation ===
