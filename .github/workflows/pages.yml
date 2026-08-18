@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -26,6 +26,46 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Apply messenger UI migration
+        shell: bash
+        run: |
+          if ! grep -q 'messenger-ui-v4' web/index.html; then
+            python - <<'RUN'
+          from pathlib import Path
+          import textwrap
+          workflow=Path('.github/workflows/messenger-ui-v4.yml').read_text(encoding='utf-8')
+          marker="python - <<'PY'"
+          if marker not in workflow:
+              raise SystemExit('Migration script marker not found')
+          block=workflow.split(marker,1)[1]
+          block=block.split("\n          PY",1)[0]
+          exec(textwrap.dedent(block))
+          RUN
+          fi
+      - name: Validate inline JavaScript
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          s=Path('web/index.html').read_text(encoding='utf-8')
+          scripts=re.findall(r'<script(?:\s[^>]*)?>(.*?)</script>',s,re.S)
+          inline=[x for x in scripts if x.strip()]
+          if not inline:
+              raise SystemExit('No inline JavaScript found')
+          Path('/tmp/anonbox-inline.js').write_text(inline[-1],encoding='utf-8')
+          PY
+          node --check /tmp/anonbox-inline.js
+      - name: Save migrated frontend
+        shell: bash
+        run: |
+          if ! git diff --quiet -- web/index.html; then
+            git config user.name "AnonBox CI"
+            git config user.email "actions@users.noreply.github.com"
+            git add web/index.html
+            git commit -m "Polish messenger navigation search filters and unread badges"
+            git push
+          fi
       - name: Setup Pages
         uses: actions/configure-pages@v5
         with:
