@@ -6,6 +6,7 @@ on:
 
 permissions:
   contents: write
+  issues: write
 
 jobs:
   patch:
@@ -13,9 +14,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Patch realtime frontend
+        id: patch
+        continue-on-error: true
         shell: bash
         run: |
-          python - <<'PY'
+          set -o pipefail
+          python - <<'PY' 2>&1 | tee /tmp/patch.log
           from pathlib import Path
 
           p = Path('web/index.html')
@@ -91,9 +95,14 @@ jobs:
           sw.write_text(sw_text,encoding='utf-8')
           PY
       - name: Validate frontend JavaScript
+        id: validate
+        if: steps.patch.outcome == 'success'
+        continue-on-error: true
         shell: bash
         run: |
-          python - <<'PY'
+          set -o pipefail
+          {
+            python - <<'PY'
           from pathlib import Path
           import re
           s=Path('web/index.html').read_text(encoding='utf-8')
@@ -103,10 +112,14 @@ jobs:
               raise SystemExit('No inline JavaScript found')
           Path('/tmp/anonbox-inline.js').write_text(inline[-1],encoding='utf-8')
           PY
-          node --check /tmp/anonbox-inline.js
-          grep -q 'realtime-ui-v1' web/index.html
-          grep -q "anonbox-v5" web/sw.js
+            node --check /tmp/anonbox-inline.js
+            grep -q 'realtime-ui-v1' web/index.html
+            grep -q "anonbox-v5" web/sw.js
+          } 2>&1 | tee /tmp/validate.log
       - name: Commit realtime UI
+        id: commit
+        if: steps.patch.outcome == 'success' && steps.validate.outcome == 'success'
+        continue-on-error: true
         shell: bash
         run: |
           git config user.name "AnonBox CI"
@@ -114,3 +127,13 @@ jobs:
           git add web/index.html web/sw.js
           git commit -m "Enable live AnonBox message updates"
           git push
+      - name: Report outcome
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          PATCH_LOG=$(tail -c 1800 /tmp/patch.log 2>/dev/null || true)
+          VALIDATE_LOG=$(tail -c 1800 /tmp/validate.log 2>/dev/null || true)
+          printf 'ANONBOX_REALTIME_REPORT patch=%s validation=%s commit=%s\n\nPATCH:\n%s\n\nVALIDATION:\n%s\n' "${{ steps.patch.outcome }}" "${{ steps.validate.outcome }}" "${{ steps.commit.outcome }}" "$PATCH_LOG" "$VALIDATE_LOG" > /tmp/report.txt
+          gh issue comment "${{ github.event.issue.number }}" --repo "${{ github.repository }}" --body-file /tmp/report.txt
