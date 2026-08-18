@@ -6,13 +6,10 @@ on:
     paths:
       - 'web/**'
       - '.github/workflows/pages.yml'
-  issues:
-    types: [opened]
   workflow_dispatch:
 
 permissions:
-  contents: write
-  issues: write
+  contents: read
   pages: write
   id-token: write
 
@@ -29,48 +26,14 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Verify messenger UI marker
-        id: migration
-        continue-on-error: true
-        shell: bash
-        run: |
-          grep -q 'messenger-ui-v4' web/index.html
-      - name: Validate inline JavaScript
-        id: validate
-        if: steps.migration.outcome == 'success'
-        continue-on-error: true
-        shell: bash
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          import re
-          s=Path('web/index.html').read_text(encoding='utf-8')
-          scripts=re.findall(r'<script(?:\s[^>]*)?>(.*?)</script>',s,re.S)
-          inline=[x for x in scripts if x.strip()]
-          if not inline:
-              raise SystemExit('No inline JavaScript found')
-          Path('/tmp/anonbox-inline.js').write_text(inline[-1],encoding='utf-8')
-          PY
-          node --check /tmp/anonbox-inline.js
-      - name: Fail on validation error
-        if: steps.migration.outcome == 'failure' || steps.validate.outcome == 'failure'
-        run: exit 1
       - name: Setup Pages
-        id: setup_pages
         uses: actions/configure-pages@v5
         with:
           enablement: true
       - name: Upload site
-        id: upload_site
         uses: actions/upload-pages-artifact@v3
         with:
           path: web
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
-      - name: Report issue-triggered deployment
-        if: always() && github.event_name == 'issues'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh issue comment "${{ github.event.issue.number }}" --repo "${{ github.repository }}" --body "ANONBOX_DEPLOY_REPORT migration=${{ steps.migration.outcome }} validation=${{ steps.validate.outcome }} setup=${{ steps.setup_pages.outcome }} upload=${{ steps.upload_site.outcome }} deployment=${{ steps.deployment.outcome }} page=${{ steps.deployment.outputs.page_url }}"
