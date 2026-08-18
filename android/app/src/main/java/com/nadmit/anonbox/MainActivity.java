@@ -25,6 +25,7 @@ public class MainActivity extends Activity {
     private static final String SUPABASE_URL = "https://ugyrgvbfwvmuhsjmjtue.supabase.co";
     private static final String SUPABASE_KEY = "sb_publishable_qHIobQFTgOOrzBttJazZQA_e5-MvmLK";
     private static final String SUPABASE_AUTH_KEY = "sb-ugyrgvbfwvmuhsjmjtue-auth-token";
+    private static final String APP_VERSION = "1.1.0";
     private static final int FILE_CHOOSER_REQUEST = 1001;
 
     private WebView webView;
@@ -119,7 +120,7 @@ public class MainActivity extends Activity {
                 deliverPendingPushToken();
             });
         } catch (Exception ignored) {
-            // Firebase configuration will be added later with google-services.json.
+            // Firebase can be unavailable temporarily; the token will be retried later.
         }
     }
 
@@ -141,7 +142,7 @@ public class MainActivity extends Activity {
                 "if(!raw)return false;var s=JSON.parse(raw);" +
                 "var access=(s&&s.access_token)||(s&&s.currentSession&&s.currentSession.access_token);" +
                 "if(!access)return false;" +
-                "var r=await fetch(" + JSONObject.quote(SUPABASE_URL + "/rest/v1/rpc/anonbox_register_push_token") + ",{method:'POST',headers:{'Content-Type':'application/json','apikey':" + JSONObject.quote(SUPABASE_KEY) + ",'Authorization':'Bearer '+access},body:JSON.stringify({p_token:token,p_device_id:deviceId,p_app_version:" + JSONObject.quote(BuildConfig.VERSION_NAME) + "})});" +
+                "var r=await fetch(" + JSONObject.quote(SUPABASE_URL + "/rest/v1/rpc/anonbox_register_push_token") + ",{method:'POST',headers:{'Content-Type':'application/json','apikey':" + JSONObject.quote(SUPABASE_KEY) + ",'Authorization':'Bearer '+access},body:JSON.stringify({p_token:token,p_device_id:deviceId,p_app_version:" + JSONObject.quote(APP_VERSION) + "})});" +
                 "return r.ok;}catch(e){return false;}}" +
                 "sync().then(function(ok){if(ok)return;var timer=setInterval(function(){sync().then(function(done){if(done||tries>=24)clearInterval(timer);});},5000);});" +
                 "})();";
