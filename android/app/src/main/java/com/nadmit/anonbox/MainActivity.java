@@ -14,6 +14,8 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
+import org.json.JSONObject;
+
 public class MainActivity extends Activity {
     private static final String HOME_URL = "https://nadmit21-ux.github.io/AnonBox/?app=1";
     private static final int FILE_CHOOSER_REQUEST = 1001;
@@ -26,6 +28,9 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         getWindow().setStatusBarColor(Color.rgb(7, 10, 18));
         getWindow().setNavigationBarColor(Color.rgb(7, 10, 18));
+
+        NotificationHelper.createChannels(this);
+        NotificationHelper.requestPermissionIfNeeded(this);
 
         webView = new WebView(this);
         webView.setBackgroundColor(Color.rgb(7, 10, 18));
@@ -47,7 +52,7 @@ public class MainActivity extends Activity {
         settings.setBuiltInZoomControls(false);
         settings.setDisplayZoomControls(false);
         settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
-        settings.setUserAgentString(settings.getUserAgentString() + " AnonBoxApp/1.0");
+        settings.setUserAgentString(settings.getUserAgentString() + " AnonBoxApp/1.1");
 
         CookieManager cookieManager = CookieManager.getInstance();
         cookieManager.setAcceptCookie(true);
@@ -62,6 +67,12 @@ public class MainActivity extends Activity {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, String url) {
                 return handleNavigation(Uri.parse(url));
+            }
+
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                super.onPageFinished(view, url);
+                deliverPendingPushToken();
             }
         });
 
@@ -89,6 +100,18 @@ public class MainActivity extends Activity {
                 }
             }
         });
+    }
+
+    private void deliverPendingPushToken() {
+        if (webView == null) return;
+        String token = PushTokenStore.get(this);
+        if (token == null || token.isEmpty()) return;
+
+        String script = "if(window.AnonBoxRegisterNativePushToken){" +
+                "window.AnonBoxRegisterNativePushToken(" + JSONObject.quote(token) + "," +
+                JSONObject.quote("android") + "," +
+                JSONObject.quote(BuildConfig.VERSION_NAME) + ");}";
+        webView.evaluateJavascript(script, null);
     }
 
     private boolean handleNavigation(Uri uri) {
