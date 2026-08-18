@@ -38,14 +38,16 @@ jobs:
             if ! grep -q 'messenger-ui-v4' web/index.html; then
               python - <<'RUN'
           from pathlib import Path
-          import textwrap
           workflow=Path('.github/workflows/messenger-ui-v4.yml').read_text(encoding='utf-8')
           marker="python - <<'PY'"
           if marker not in workflow:
               raise SystemExit('Migration script marker not found')
           block=workflow.split(marker,1)[1]
           block=block.split("\n          PY",1)[0]
-          exec(textwrap.dedent(block))
+          clean=[]
+          for line in block.splitlines():
+              clean.append(line[10:] if line.startswith('          ') else line)
+          exec('\n'.join(clean))
           RUN
             fi
           } 2>&1 | tee /tmp/anonbox-migration.log
