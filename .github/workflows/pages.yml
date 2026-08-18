@@ -29,10 +29,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Apply messenger UI migration
+        id: migration
+        continue-on-error: true
         shell: bash
         run: |
-          if ! grep -q 'messenger-ui-v4' web/index.html; then
-            python - <<'RUN'
+          set -o pipefail
+          {
+            if ! grep -q 'messenger-ui-v4' web/index.html; then
+              python - <<'RUN'
           from pathlib import Path
           import textwrap
           workflow=Path('.github/workflows/messenger-ui-v4.yml').read_text(encoding='utf-8')
@@ -43,11 +47,17 @@ jobs:
           block=block.split("\n          PY",1)[0]
           exec(textwrap.dedent(block))
           RUN
-          fi
+            fi
+          } 2>&1 | tee /tmp/anonbox-migration.log
       - name: Validate inline JavaScript
+        id: validate
+        if: steps.migration.outcome == 'success'
+        continue-on-error: true
         shell: bash
         run: |
-          python - <<'PY'
+          set -o pipefail
+          {
+            python - <<'PY'
           from pathlib import Path
           import re
           s=Path('web/index.html').read_text(encoding='utf-8')
@@ -57,8 +67,27 @@ jobs:
               raise SystemExit('No inline JavaScript found')
           Path('/tmp/anonbox-inline.js').write_text(inline[-1],encoding='utf-8')
           PY
-          node --check /tmp/anonbox-inline.js
+            node --check /tmp/anonbox-inline.js
+          } 2>&1 | tee /tmp/anonbox-validation.log
+      - name: Save migration diagnostics
+        if: steps.migration.outcome == 'failure' || steps.validate.outcome == 'failure'
+        shell: bash
+        run: |
+          {
+            echo 'AnonBox migration diagnostics'
+            echo '=== migration ==='
+            cat /tmp/anonbox-migration.log 2>/dev/null || true
+            echo '=== validation ==='
+            cat /tmp/anonbox-validation.log 2>/dev/null || true
+          } > web/migration-error.txt
+          git config user.name "AnonBox CI"
+          git config user.email "actions@users.noreply.github.com"
+          git add web/migration-error.txt
+          git commit -m "Record messenger UI migration diagnostics" || true
+          git push || true
+          exit 1
       - name: Save migrated frontend
+        if: steps.migration.outcome == 'success' && steps.validate.outcome == 'success'
         shell: bash
         run: |
           if ! git diff --quiet -- web/index.html; then
