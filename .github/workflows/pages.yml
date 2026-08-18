@@ -12,6 +12,7 @@ on:
 
 permissions:
   contents: write
+  issues: write
   pages: write
   id-token: write
 
@@ -36,19 +37,8 @@ jobs:
           set -o pipefail
           {
             if ! grep -q 'messenger-ui-v4' web/index.html; then
-              python - <<'RUN'
-          from pathlib import Path
-          workflow=Path('.github/workflows/messenger-ui-v4.yml').read_text(encoding='utf-8')
-          marker="python - <<'PY'"
-          if marker not in workflow:
-              raise SystemExit('Migration script marker not found')
-          block=workflow.split(marker,1)[1]
-          block=block.split("\n          PY",1)[0]
-          clean=[]
-          for line in block.splitlines():
-              clean.append(line[10:] if line.startswith('          ') else line)
-          exec('\n'.join(clean))
-          RUN
+              echo 'Expected messenger-ui-v4 marker is missing.'
+              exit 1
             fi
           } 2>&1 | tee /tmp/anonbox-migration.log
       - name: Validate inline JavaScript
@@ -71,34 +61,9 @@ jobs:
           PY
             node --check /tmp/anonbox-inline.js
           } 2>&1 | tee /tmp/anonbox-validation.log
-      - name: Save migration diagnostics
+      - name: Fail on validation error
         if: steps.migration.outcome == 'failure' || steps.validate.outcome == 'failure'
-        shell: bash
-        run: |
-          {
-            echo 'AnonBox migration diagnostics'
-            echo '=== migration ==='
-            cat /tmp/anonbox-migration.log 2>/dev/null || true
-            echo '=== validation ==='
-            cat /tmp/anonbox-validation.log 2>/dev/null || true
-          } > web/migration-error.txt
-          git config user.name "AnonBox CI"
-          git config user.email "actions@users.noreply.github.com"
-          git add web/migration-error.txt
-          git commit -m "Record messenger UI migration diagnostics" || true
-          git push || true
-          exit 1
-      - name: Save migrated frontend
-        if: steps.migration.outcome == 'success' && steps.validate.outcome == 'success'
-        shell: bash
-        run: |
-          if ! git diff --quiet -- web/index.html; then
-            git config user.name "AnonBox CI"
-            git config user.email "actions@users.noreply.github.com"
-            git add web/index.html
-            git commit -m "Polish messenger navigation search filters and unread badges"
-            git push
-          fi
+        run: exit 1
       - name: Setup Pages
         uses: actions/configure-pages@v5
         with:
@@ -110,3 +75,8 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+      - name: Confirm issue-triggered deployment
+        if: github.event_name == 'issues'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh issue comment "${{ github.event.issue.number }}" --repo "${{ github.repository }}" --body "ANONBOX_PAGES_DEPLOY_OK ${{ steps.deployment.outputs.page_url }}"
