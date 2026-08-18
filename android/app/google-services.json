@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "73258145230",
+    "project_id": "anonbox-b81b3",
+    "storage_bucket": "anonbox-b81b3.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:73258145230:android:d05e3b5f1756a0e116879f",
+        "android_client_info": {
+          "package_name": "com.nadmit.anonbox"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBuIr9B_G6yPqIhuHdA-8H3nngHWyGuAVo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
