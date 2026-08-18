@@ -1,0 +1,5 @@
+status=failure
+source_sha=184e2245633e799b46c14ac20ed475fab93fa823
+run_id=32177051746
+version=1.1.0
+firebase=enabled
