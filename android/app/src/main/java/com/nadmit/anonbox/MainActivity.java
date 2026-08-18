@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.webkit.CookieManager;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
@@ -14,10 +15,16 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
+import com.google.firebase.FirebaseApp;
+import com.google.firebase.messaging.FirebaseMessaging;
+
 import org.json.JSONObject;
 
 public class MainActivity extends Activity {
     private static final String HOME_URL = "https://nadmit21-ux.github.io/AnonBox/?app=1";
+    private static final String SUPABASE_URL = "https://ugyrgvbfwvmuhsjmjtue.supabase.co";
+    private static final String SUPABASE_KEY = "sb_publishable_qHIobQFTgOOrzBttJazZQA_e5-MvmLK";
+    private static final String SUPABASE_AUTH_KEY = "sb-ugyrgvbfwvmuhsjmjtue-auth-token";
     private static final int FILE_CHOOSER_REQUEST = 1001;
 
     private WebView webView;
@@ -37,6 +44,7 @@ public class MainActivity extends Activity {
         setContentView(webView);
 
         configureWebView();
+        refreshFirebaseTokenIfConfigured();
         loadInitialUrl(getIntent());
     }
 
@@ -102,15 +110,41 @@ public class MainActivity extends Activity {
         });
     }
 
+    private void refreshFirebaseTokenIfConfigured() {
+        try {
+            if (FirebaseApp.getApps(this).isEmpty()) return;
+            FirebaseMessaging.getInstance().getToken().addOnSuccessListener(token -> {
+                if (token == null || token.trim().isEmpty()) return;
+                PushTokenStore.save(this, token);
+                deliverPendingPushToken();
+            });
+        } catch (Exception ignored) {
+            // Firebase configuration will be added later with google-services.json.
+        }
+    }
+
     private void deliverPendingPushToken() {
         if (webView == null) return;
         String token = PushTokenStore.get(this);
         if (token == null || token.isEmpty()) return;
 
-        String script = "if(window.AnonBoxRegisterNativePushToken){" +
-                "window.AnonBoxRegisterNativePushToken(" + JSONObject.quote(token) + "," +
-                JSONObject.quote("android") + "," +
-                JSONObject.quote(BuildConfig.VERSION_NAME) + ");}";
+        String androidId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
+        if (androidId == null) androidId = "android";
+
+        String script = "(function(){" +
+                "if(window.__anonboxPushSyncStarted)return;window.__anonboxPushSyncStarted=true;" +
+                "var token=" + JSONObject.quote(token) + ";" +
+                "var deviceId=" + JSONObject.quote(androidId) + ";" +
+                "var tries=0;" +
+                "async function sync(){tries++;try{" +
+                "var raw=localStorage.getItem(" + JSONObject.quote(SUPABASE_AUTH_KEY) + ");" +
+                "if(!raw)return false;var s=JSON.parse(raw);" +
+                "var access=(s&&s.access_token)||(s&&s.currentSession&&s.currentSession.access_token);" +
+                "if(!access)return false;" +
+                "var r=await fetch(" + JSONObject.quote(SUPABASE_URL + "/rest/v1/rpc/anonbox_register_push_token") + ",{method:'POST',headers:{'Content-Type':'application/json','apikey':" + JSONObject.quote(SUPABASE_KEY) + ",'Authorization':'Bearer '+access},body:JSON.stringify({p_token:token,p_device_id:deviceId,p_app_version:" + JSONObject.quote(BuildConfig.VERSION_NAME) + "})});" +
+                "return r.ok;}catch(e){return false;}}" +
+                "sync().then(function(ok){if(ok)return;var timer=setInterval(function(){sync().then(function(done){if(done||tries>=24)clearInterval(timer);});},5000);});" +
+                "})();";
         webView.evaluateJavascript(script, null);
     }
 
