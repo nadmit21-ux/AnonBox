@@ -137,7 +137,11 @@ Deno.serve(async (req: Request) => {
     return json({ error: "Invalid message id" }, 400);
   }
 
-  const rawSa = String(config.firebase_service_account || "");
+  const rawSa = String(
+    Deno.env.get("FIREBASE_SERVICE_ACCOUNT_JSON") ||
+    config.firebase_service_account ||
+    "",
+  );
   if (!rawSa) {
     return json({ error: "Firebase server credentials not configured" }, 503);
   }
