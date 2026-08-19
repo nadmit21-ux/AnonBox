@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -26,14 +26,42 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Apply realtime chat patch
+        run: python .github/scripts/apply_realtime_chat_patch.py
+
+      - name: Validate inline JavaScript
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          html = Path('web/index.html').read_text(encoding='utf-8')
+          scripts = re.findall(r'<script(?:\s[^>]*)?>(.*?)</script>', html, flags=re.S)
+          inline = '\n'.join(s for s in scripts if s.strip())
+          Path('/tmp/anonbox-inline.js').write_text(inline, encoding='utf-8')
+          PY
+          node --check /tmp/anonbox-inline.js
+
+      - name: Save patched frontend
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add web/index.html web/sw.js
+          if ! git diff --cached --quiet; then
+            git commit -m "Enable secure realtime visitor chat and typing"
+            git push
+          fi
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
         with:
           enablement: true
+
       - name: Upload site
         uses: actions/upload-pages-artifact@v3
         with:
           path: web
+
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
