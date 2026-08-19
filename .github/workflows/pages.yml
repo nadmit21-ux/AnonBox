@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
   pages: write
   id-token: write
 
@@ -52,14 +52,3 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
-
-      - name: Record successful deployment
-        run: |
-          printf 'realtime-chat-deployed\nsource=%s\nurl=%s\n' "$GITHUB_SHA" "${{ steps.deployment.outputs.page_url }}" > .github/realtime-chat-deploy-ok.txt
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add .github/realtime-chat-deploy-ok.txt
-          if ! git diff --cached --quiet; then
-            git commit -m "Confirm realtime chat Pages deployment"
-            git push
-          fi
