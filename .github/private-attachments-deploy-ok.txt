@@ -1,3 +1,0 @@
-private-attachments-deployed
-source=d804cd93b400c558390614e05c2021fab84ca663
-url=https://nadmit21-ux.github.io/AnonBox/
