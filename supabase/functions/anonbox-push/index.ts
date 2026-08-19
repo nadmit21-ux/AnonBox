@@ -13,9 +13,15 @@ type PushConfig = {
 };
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-const secretMapRaw = Deno.env.get("SUPABASE_SECRET_KEYS");
 const legacyServiceRole = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-const adminKey = secretMapRaw ? JSON.parse(secretMapRaw)["default"] : legacyServiceRole;
+const secretMapRaw = Deno.env.get("SUPABASE_SECRET_KEYS");
+let mappedServiceRole = "";
+try {
+  mappedServiceRole = secretMapRaw ? String(JSON.parse(secretMapRaw)?.default || "") : "";
+} catch {
+  mappedServiceRole = "";
+}
+const adminKey = legacyServiceRole || mappedServiceRole;
 if (!SUPABASE_URL || !adminKey) throw new Error("Supabase admin environment is unavailable");
 
 const admin = createClient(SUPABASE_URL, adminKey, {
@@ -43,10 +49,7 @@ function base64Url(input: Uint8Array | string): string {
   const bytes = typeof input === "string" ? new TextEncoder().encode(input) : input;
   let binary = "";
   for (const b of bytes) binary += String.fromCharCode(b);
-  return btoa(binary)
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=+$/g, "");
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
 }
 
 function pemToDer(pem: string): Uint8Array {
@@ -63,15 +66,13 @@ function pemToDer(pem: string): Uint8Array {
 async function firebaseAccessToken(sa: ServiceAccount): Promise<string> {
   const now = Math.floor(Date.now() / 1000);
   const header = base64Url(JSON.stringify({ alg: "RS256", typ: "JWT" }));
-  const payload = base64Url(
-    JSON.stringify({
-      iss: sa.client_email,
-      scope: "https://www.googleapis.com/auth/firebase.messaging",
-      aud: "https://oauth2.googleapis.com/token",
-      iat: now,
-      exp: now + 3600,
-    }),
-  );
+  const payload = base64Url(JSON.stringify({
+    iss: sa.client_email,
+    scope: "https://www.googleapis.com/auth/firebase.messaging",
+    aud: "https://oauth2.googleapis.com/token",
+    iat: now,
+    exp: now + 3600,
+  }));
   const unsigned = `${header}.${payload}`;
   const key = await crypto.subtle.importKey(
     "pkcs8",
@@ -80,13 +81,11 @@ async function firebaseAccessToken(sa: ServiceAccount): Promise<string> {
     false,
     ["sign"],
   );
-  const signature = new Uint8Array(
-    await crypto.subtle.sign(
-      "RSASSA-PKCS1-v1_5",
-      key,
-      new TextEncoder().encode(unsigned),
-    ),
-  );
+  const signature = new Uint8Array(await crypto.subtle.sign(
+    "RSASSA-PKCS1-v1_5",
+    key,
+    new TextEncoder().encode(unsigned),
+  ));
   const assertion = `${unsigned}.${base64Url(signature)}`;
   const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST",
@@ -121,9 +120,7 @@ Deno.serve(async (req: Request) => {
 
   const suppliedHook = req.headers.get("x-anonbox-hook-secret") || "";
   const expectedHook = String(config.hook_secret || "");
-  if (!safeEqual(suppliedHook, expectedHook)) {
-    return json({ error: "Unauthorized" }, 401);
-  }
+  if (!safeEqual(suppliedHook, expectedHook)) return json({ error: "Unauthorized" }, 401);
 
   let body: any;
   try {
@@ -133,39 +130,31 @@ Deno.serve(async (req: Request) => {
   }
 
   const messageId = String(body?.message_id || "").trim();
-  if (!/^\d{1,20}$/.test(messageId)) {
-    return json({ error: "Invalid message id" }, 400);
-  }
+  if (!/^\d{1,20}$/.test(messageId)) return json({ error: "Invalid message id" }, 400);
 
   const rawSa = String(
     Deno.env.get("FIREBASE_SERVICE_ACCOUNT_JSON") ||
     config.firebase_service_account ||
     "",
   );
-  if (!rawSa) {
-    return json({ error: "Firebase server credentials not configured" }, 503);
-  }
+  if (!rawSa) return json({ error: "Firebase server credentials not configured" }, 503);
 
   let sa: ServiceAccount;
   try {
     sa = JSON.parse(rawSa);
-    if (!sa.project_id || !sa.client_email || !sa.private_key) {
-      throw new Error("missing fields");
-    }
+    if (!sa.project_id || !sa.client_email || !sa.private_key) throw new Error("missing fields");
   } catch {
     return json({ error: "Invalid Firebase server credentials" }, 503);
   }
 
   const { data: msg, error: msgError } = await admin
     .from("anonbox_messages_v2")
-    .select("id,box_id,conversation_id,direction,sender_mode,created_at")
+    .select("id,box_id,conversation_id,direction,created_at")
     .eq("id", messageId)
     .maybeSingle();
 
   if (msgError || !msg) return json({ error: "Message not found" }, 404);
-  if (msg.direction !== "visitor") {
-    return json({ ok: true, skipped: "not_visitor" });
-  }
+  if (msg.direction !== "visitor") return json({ ok: true, skipped: "not_visitor" });
   if (Date.now() - new Date(msg.created_at).getTime() > 10 * 60 * 1000) {
     return json({ ok: true, skipped: "too_old" });
   }
@@ -175,7 +164,6 @@ Deno.serve(async (req: Request) => {
     .select("owner_id")
     .eq("id", msg.box_id)
     .single();
-
   if (boxError || !box) return json({ error: "Owner not found" }, 404);
 
   const { data: devices, error: deviceError } = await admin
@@ -184,18 +172,14 @@ Deno.serve(async (req: Request) => {
     .eq("user_id", box.owner_id)
     .eq("enabled", true)
     .eq("platform", "android");
-
   if (deviceError) return json({ error: "Push devices unavailable" }, 500);
   if (!devices?.length) return json({ ok: true, skipped: "no_devices" });
 
   const { error: claimError } = await admin
     .from("anonbox_push_deliveries")
     .insert({ message_id: messageId });
-
   if (claimError) {
-    if (claimError.code === "23505") {
-      return json({ ok: true, skipped: "already_processed" });
-    }
+    if (claimError.code === "23505") return json({ ok: true, skipped: "already_processed" });
     return json({ error: "Unable to claim notification" }, 500);
   }
 
@@ -217,20 +201,14 @@ Deno.serve(async (req: Request) => {
           body: JSON.stringify({
             message: {
               token: device.token,
-              notification: {
+              data: {
                 title: "Nouveau message AnonBox",
                 body: "Tu as reçu un nouveau message.",
-              },
-              data: {
                 conversation_id: String(msg.conversation_id),
                 message_id: String(msg.id),
               },
               android: {
                 priority: "high",
-                notification: {
-                  channel_id: "anonbox_messages",
-                  sound: "default",
-                },
               },
             },
           }),
@@ -254,35 +232,23 @@ Deno.serve(async (req: Request) => {
     }
 
     if (invalidTokenIds.length) {
-      await admin
-        .from("anonbox_push_tokens")
-        .update({ enabled: false })
-        .in("id", invalidTokenIds);
+      await admin.from("anonbox_push_tokens").update({ enabled: false }).in("id", invalidTokenIds);
     }
 
-    await admin
-      .from("anonbox_push_deliveries")
-      .update({
-        sent_at: sent > 0 ? new Date().toISOString() : null,
-        delivered_count: sent,
-        last_error: failures.length ? failures.join(" | ").slice(0, 2000) : null,
-      })
-      .eq("message_id", messageId);
+    await admin.from("anonbox_push_deliveries").update({
+      sent_at: sent > 0 ? new Date().toISOString() : null,
+      delivered_count: sent,
+      last_error: failures.length ? failures.join(" | ").slice(0, 2000) : null,
+    }).eq("message_id", messageId);
 
     if (sent === 0 && failures.length) {
-      await admin
-        .from("anonbox_push_deliveries")
-        .delete()
-        .eq("message_id", messageId);
+      await admin.from("anonbox_push_deliveries").delete().eq("message_id", messageId);
       return json({ error: "FCM delivery failed", failures: failures.length }, 502);
     }
 
     return json({ ok: true, sent, disabled_tokens: invalidTokenIds.length });
   } catch (e) {
-    await admin
-      .from("anonbox_push_deliveries")
-      .delete()
-      .eq("message_id", messageId);
+    await admin.from("anonbox_push_deliveries").delete().eq("message_id", messageId);
     return json({ error: e instanceof Error ? e.message : "Push failed" }, 502);
   }
 });
