@@ -1,3 +1,5 @@
-AnonBox web chat v2
-Dedicated full-screen conversations
-Read state: mark on chat open
+AnonBox web UI v3
+Premium dark messaging interface
+Realtime chat, read receipts, typing, reactions, replies, private attachments
+Responsive mobile-first layout and accessibility polish
+Cache: anonbox-v11
