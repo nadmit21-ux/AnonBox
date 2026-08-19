@@ -1,3 +1,0 @@
-premium-ui-v3-deployed
-source=d55432726dc2e8bd099e8783cdc51be30568faaf
-url=https://nadmit21-ux.github.io/AnonBox/
