@@ -1,3 +1,0 @@
-voice-view-once-v8-deployed
-source=6bc3edeba4e832a162d8ec282a5b452545edc37f
-url=https://nadmit21-ux.github.io/AnonBox/
