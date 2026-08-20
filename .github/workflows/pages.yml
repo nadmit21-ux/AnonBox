@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
   pages: write
   id-token: write
 
@@ -27,9 +27,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Apply balanced light theme
-        run: python .github/scripts/apply_balanced_light_v62.py
-
       - name: Validate inline JavaScript
         run: |
           python - <<'PY'
@@ -41,16 +38,6 @@ jobs:
           Path('/tmp/anonbox-inline.js').write_text(inline, encoding='utf-8')
           PY
           node --check /tmp/anonbox-inline.js
-
-      - name: Save balanced theme
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add web/index.html web/sw.js web/version.txt
-          if ! git diff --cached --quiet; then
-            git commit -m "Balance AnonBox light theme"
-            git push
-          fi
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
@@ -65,14 +52,3 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
-
-      - name: Record successful v6.2 deployment
-        run: |
-          printf 'balanced-light-v62-deployed\nsource=%s\nurl=%s\n' "$GITHUB_SHA" "${{ steps.deployment.outputs.page_url }}" > .github/v62-deploy-ok.txt
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add .github/v62-deploy-ok.txt
-          if ! git diff --cached --quiet; then
-            git commit -m "Confirm balanced light v6.2 deployment"
-            git push
-          fi
