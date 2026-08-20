@@ -26,7 +26,7 @@ public class MainActivity extends Activity {
     private static final String SUPABASE_URL = "https://ugyrgvbfwvmuhsjmjtue.supabase.co";
     private static final String SUPABASE_KEY = "sb_publishable_qHIobQFTgOOrzBttJazZQA_e5-MvmLK";
     private static final String SUPABASE_AUTH_KEY = "sb-ugyrgvbfwvmuhsjmjtue-auth-token";
-    private static final String APP_VERSION = "1.2.1";
+    private static final String APP_VERSION = "1.2.2";
     private static final int FILE_CHOOSER_REQUEST = 1001;
 
     private WebView webView;
@@ -35,7 +35,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        int shellColor = Color.rgb(246, 248, 252);
+        int shellColor = Color.rgb(233, 238, 245);
         getWindow().setStatusBarColor(shellColor);
         getWindow().setNavigationBarColor(shellColor);
         getWindow().getDecorView().setSystemUiVisibility(
@@ -67,7 +67,7 @@ public class MainActivity extends Activity {
         settings.setDisplayZoomControls(false);
         settings.setTextZoom(100);
         settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
-        settings.setUserAgentString(settings.getUserAgentString() + " AnonBoxApp/1.2.1");
+        settings.setUserAgentString(settings.getUserAgentString() + " AnonBoxApp/1.2.2");
 
         CookieManager cookieManager = CookieManager.getInstance();
         cookieManager.setAcceptCookie(true);
