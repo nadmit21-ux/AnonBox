@@ -7,6 +7,7 @@ import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.view.View;
 import android.webkit.CookieManager;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
@@ -25,7 +26,7 @@ public class MainActivity extends Activity {
     private static final String SUPABASE_URL = "https://ugyrgvbfwvmuhsjmjtue.supabase.co";
     private static final String SUPABASE_KEY = "sb_publishable_qHIobQFTgOOrzBttJazZQA_e5-MvmLK";
     private static final String SUPABASE_AUTH_KEY = "sb-ugyrgvbfwvmuhsjmjtue-auth-token";
-    private static final String APP_VERSION = "1.2.0";
+    private static final String APP_VERSION = "1.2.1";
     private static final int FILE_CHOOSER_REQUEST = 1001;
 
     private WebView webView;
@@ -34,14 +35,18 @@ public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        getWindow().setStatusBarColor(Color.rgb(10, 16, 25));
-        getWindow().setNavigationBarColor(Color.rgb(10, 16, 25));
+        int shellColor = Color.rgb(246, 248, 252);
+        getWindow().setStatusBarColor(shellColor);
+        getWindow().setNavigationBarColor(shellColor);
+        getWindow().getDecorView().setSystemUiVisibility(
+                View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR | View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
+        );
 
         NotificationHelper.createChannels(this);
         NotificationHelper.requestPermissionIfNeeded(this);
 
         webView = new WebView(this);
-        webView.setBackgroundColor(Color.rgb(10, 16, 25));
+        webView.setBackgroundColor(shellColor);
         setContentView(webView);
 
         configureWebView();
@@ -62,7 +67,7 @@ public class MainActivity extends Activity {
         settings.setDisplayZoomControls(false);
         settings.setTextZoom(100);
         settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
-        settings.setUserAgentString(settings.getUserAgentString() + " AnonBoxApp/1.2");
+        settings.setUserAgentString(settings.getUserAgentString() + " AnonBoxApp/1.2.1");
 
         CookieManager cookieManager = CookieManager.getInstance();
         cookieManager.setAcceptCookie(true);
