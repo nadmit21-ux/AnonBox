@@ -1,6 +1,7 @@
-AnonBox web UI v8.1
-Compact chat composer controls
-Improved text contrast, especially in Night theme
-Voice and view-once features preserved
+AnonBox web UI v8.2
+Forced refresh through service worker v21
+Compact 30–32 px chat utility buttons
+Higher Night-theme text contrast
+Voice and view-once preserved
 13 selectable themes preserved
-Cache: anonbox-v20
+Cache: anonbox-v21
