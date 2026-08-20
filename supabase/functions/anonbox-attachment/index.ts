@@ -81,7 +81,7 @@ type Participant = {
 async function participant(conversationId: string, deviceId: string, userId: string | null): Promise<Participant | null> {
   const { data: rows, error } = await admin
     .from("anonbox_messages_v2")
-    .select("id,box_id,direction,sender_mode,sender_user_id,sender_fingerprint")
+    .select("id,box_id,direction,sender_mode,sender_user_id,sender_fingerprint,sender_pseudonym_snapshot,sender_avatar_path_snapshot")
     .eq("conversation_id", conversationId)
     .is("deleted_at", null)
     .order("created_at", { ascending: true })
@@ -112,8 +112,12 @@ async function participant(conversationId: string, deviceId: string, userId: str
 
   if (deviceId.length >= 8 && deviceId.length <= 200) {
     const fp = await sha256Hex(`${boxId}:${deviceId}`);
-    const anonRow = rows.find((r: any) => r.direction === "visitor" && r.sender_mode === "anonymous" && r.sender_fingerprint === fp);
-    if (anonRow) return { actor: "visitor", mode: "anonymous", boxId, ownerId, userId: null, fingerprint: fp, pseudonym: null, avatarPath: null };
+    const anonRow = [...rows].reverse().find((r: any) => r.direction === "visitor" && r.sender_mode === "anonymous" && r.sender_fingerprint === fp);
+    if (anonRow) return {
+      actor: "visitor", mode: "anonymous", boxId, ownerId, userId: null, fingerprint: fp,
+      pseudonym: anonRow.sender_pseudonym_snapshot || null,
+      avatarPath: anonRow.sender_avatar_path_snapshot || null,
+    };
   }
   return null;
 }
@@ -135,6 +139,8 @@ async function upload(req: Request) {
   const deviceId = String(form.get("device_id") || "");
   const caption = String(form.get("caption") || "").trim();
   const replyRaw = String(form.get("reply_to_id") || "").trim();
+  const anonPseudonym = String(form.get("anon_pseudonym") || "").trim();
+  const anonAvatarPath = String(form.get("anon_avatar_path") || "").trim();
   const file = form.get("file");
   if (!/^[0-9a-f-]{36}$/i.test(conversationId)) return json(req, { error: "Conversation invalide." }, 400);
   if (!(file instanceof File)) return json(req, { error: "Fichier manquant." }, 400);
@@ -146,6 +152,19 @@ async function upload(req: Request) {
   const userId = await requestUser(req);
   const p = await participant(conversationId, deviceId, userId);
   if (!p) return json(req, { error: "Conversation introuvable." }, 403);
+
+  if (p.mode === "anonymous") {
+    if (anonPseudonym) {
+      if (anonPseudonym.length < 2 || anonPseudonym.length > 32) return json(req, { error: "Nom de profil anonyme invalide." }, 400);
+      p.pseudonym = anonPseudonym;
+    }
+    if (anonAvatarPath) {
+      const deviceHash = await sha256Hex(deviceId);
+      if (!anonAvatarPath.startsWith(`anonymous/${deviceHash}/`)) return json(req, { error: "Avatar anonyme invalide." }, 400);
+      p.avatarPath = anonAvatarPath;
+    }
+  }
+
   if (await rateLimited(p, conversationId)) return json(req, { error: "Trop de messages envoyés. Réessaie un peu plus tard." }, 429);
 
   let replyTo: number | null = null;
