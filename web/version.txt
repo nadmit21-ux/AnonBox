@@ -1,7 +1,7 @@
-AnonBox web UI v8.2
-Forced refresh through service worker v21
-Compact 30–32 px chat utility buttons
-Higher Night-theme text contrast
-Voice and view-once preserved
-13 selectable themes preserved
-Cache: anonbox-v21
+AnonBox web UI v8.3
+Removed redundant anonymous-profile notice inside chats
+Reduced blur, shadows and transitions for smoother rendering
+Realtime refreshes are more aggressively debounced
+Voice recorder updates reduced to 500 ms intervals
+Compact chat controls and 13 selectable themes preserved
+Cache: anonbox-v22
