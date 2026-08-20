@@ -26,11 +26,11 @@ import com.google.firebase.messaging.FirebaseMessaging;
 import org.json.JSONObject;
 
 public class MainActivity extends Activity {
-    private static final String HOME_URL = "https://nadmit21-ux.github.io/AnonBox/?app=1&_abv=21";
+    private static final String HOME_URL = "https://nadmit21-ux.github.io/AnonBox/?app=1";
     private static final String SUPABASE_URL = "https://ugyrgvbfwvmuhsjmjtue.supabase.co";
     private static final String SUPABASE_KEY = "sb_publishable_qHIobQFTgOOrzBttJazZQA_e5-MvmLK";
     private static final String SUPABASE_AUTH_KEY = "sb-ugyrgvbfwvmuhsjmjtue-auth-token";
-    private static final String APP_VERSION = "1.2.6";
+    private static final String APP_VERSION = "1.2.7";
     private static final int FILE_CHOOSER_REQUEST = 1001;
     private static final int AUDIO_PERMISSION_REQUEST = 1002;
 
@@ -52,7 +52,6 @@ public class MainActivity extends Activity {
         setContentView(webView);
 
         configureWebView();
-        webView.clearCache(true);
         refreshFirebaseTokenIfConfigured();
         loadInitialUrl(getIntent());
     }
@@ -112,8 +111,8 @@ public class MainActivity extends Activity {
         settings.setDisplayZoomControls(false);
         settings.setTextZoom(100);
         settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
-        settings.setCacheMode(WebSettings.LOAD_NO_CACHE);
-        settings.setUserAgentString(settings.getUserAgentString() + " AnonBoxApp/1.2.6");
+        settings.setCacheMode(WebSettings.LOAD_DEFAULT);
+        settings.setUserAgentString(settings.getUserAgentString() + " AnonBoxApp/1.2.7");
 
         CookieManager cookieManager = CookieManager.getInstance();
         cookieManager.setAcceptCookie(true);
@@ -287,12 +286,6 @@ public class MainActivity extends Activity {
         return true;
     }
 
-    private String freshAnonBoxUrl(Uri uri) {
-        if (uri == null) return HOME_URL;
-        if ("21".equals(uri.getQueryParameter("_abv"))) return uri.toString();
-        return uri.buildUpon().appendQueryParameter("_abv", "21").build().toString();
-    }
-
     private void loadInitialUrl(Intent intent) {
         Uri data = intent == null ? null : intent.getData();
         if (data != null
@@ -300,7 +293,7 @@ public class MainActivity extends Activity {
                 && "nadmit21-ux.github.io".equalsIgnoreCase(data.getHost())
                 && data.getPath() != null
                 && data.getPath().startsWith("/AnonBox/")) {
-            webView.loadUrl(freshAnonBoxUrl(data));
+            webView.loadUrl(data.toString());
         } else {
             webView.loadUrl(HOME_URL);
         }
