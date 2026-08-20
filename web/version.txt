@@ -1,5 +1,6 @@
-AnonBox web UI v8
-Voice messages with recording and inline playback
-View-once text and attachments with recipient-only one-time opening
+AnonBox web UI v8.1
+Compact chat composer controls
+Improved text contrast, especially in Night theme
+Voice and view-once features preserved
 13 selectable themes preserved
-Cache: anonbox-v19
+Cache: anonbox-v20
