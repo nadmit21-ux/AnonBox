@@ -1,5 +1,4 @@
-AnonBox web UI v6.1
-Light interface by default
-Anonymous visitors: no profile, custom local anonymous profile, or generated anonymous profile with image
-Anonymous profiles are visible in the Profiles tab while real account identity remains hidden
-Cache: anonbox-v15
+AnonBox web UI v6.2
+Balanced light interface: blue-gray background, off-white surfaces, softer contrast
+Anonymous profile features unchanged
+Cache: anonbox-v16
