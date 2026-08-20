@@ -1,7 +1,7 @@
-AnonBox web UI v8.3
-Removed redundant anonymous-profile notice inside chats
-Reduced blur, shadows and transitions for smoother rendering
-Realtime refreshes are more aggressively debounced
-Voice recorder updates reduced to 500 ms intervals
-Compact chat controls and 13 selectable themes preserved
-Cache: anonbox-v22
+AnonBox web UI v8.4
+Navigation shell is now cache-first for instant screen changes
+No more HTML rewrite on every navigation
+No more forced no-store navigation fetches
+Redundant anonymous-profile notice remains removed
+Compact chat controls, voice, view-once and 13 themes preserved
+Cache: anonbox-v23
