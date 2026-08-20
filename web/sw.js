@@ -1,11 +1,12 @@
-const CACHE='anonbox-v23';
-const SHELL_KEY=new Request('./__anonbox_shell_v23__');
+const CACHE='anonbox-v24';
+const SHELL_KEY=new Request('./__anonbox_shell_v24__');
 const SUPABASE_URL='https://ugyrgvbfwvmuhsjmjtue.supabase.co';
 const SUPABASE_KEY='sb_publishable_qHIobQFTgOOrzBttJazZQA_e5-MvmLK';
 const LEGACY_API=SUPABASE_URL+'/functions/v1/anonbox-api';
+let lastShellRefresh=0;
 
 const CHAT_HOTFIX=`
-<style id="anonbox-v84-hotfix">
+<style id="anonbox-v85-hotfix">
 html{scroll-behavior:auto!important}
 .chatNotice{display:none!important}
 .chatScreenShell{padding-bottom:calc(var(--composer) + 14px)!important}
@@ -25,7 +26,7 @@ html[data-anon-theme="night"] .chatComposer{background:#1b2e36!important;border-
 html[data-anon-theme="night"] #chatAttachmentBtn,html[data-anon-theme="night"] #chatVoiceBtn,html[data-anon-theme="night"] #chatViewOnceBtn{background:#263d46!important;border-color:#405d67!important;color:#f2f8f8!important}html[data-anon-theme="night"] #chatViewOnceBtn.active{background:#6557d9!important;border-color:#8174ec!important;color:#fff!important}html[data-anon-theme="night"] #chatSendBtn{background:#6557d9!important;color:#fff!important;box-shadow:none!important}
 @media(max-width:380px){.chatComposer{gap:3px!important;padding-left:5px!important;padding-right:5px!important}#chatAttachmentBtn,#chatVoiceBtn,#chatViewOnceBtn{width:30px!important;height:30px!important;min-width:30px!important;min-height:30px!important;flex-basis:30px!important;font-size:14px!important}#chatSendBtn{width:36px!important;height:36px!important;min-width:36px!important;min-height:36px!important;flex-basis:36px!important}#chatInput{min-width:92px!important;padding-left:9px!important;padding-right:9px!important}}
 </style>
-<meta name="anonbox-ui-build" content="8.4">
+<meta name="anonbox-ui-build" content="8.5">
 `;
 
 function jsonResponse(data,status=200){
@@ -62,13 +63,17 @@ function optimizeHtml(html){
   html=html.replace("voiceTimer=setInterval(updateVoiceTimer,250)","voiceTimer=setInterval(updateVoiceTimer,500)");
   html=html.replace("voiceRecorder.start(250)","voiceRecorder.start(500)");
   html=html.replace("scrollIntoView({behavior:'smooth',block:'center'})","scrollIntoView({behavior:'auto',block:'center'})");
-  html=html.replace(/<style id="anonbox-v8[23]-hotfix">[\s\S]*?<meta name="anonbox-ui-build" content="8\.[23]">/g,'');
-  if(!html.includes('anonbox-v84-hotfix')) html=html.replace('</head>',CHAT_HOTFIX+'</head>');
+
+  const fastLoadAll="async function loadAll(){try{var data=await rpc('anonbox_get_dashboard',{});if(!data||!data.profile||!data.box)throw new Error('Profil ou boîte introuvable.');profile=data.profile;box=data.box;messages=Array.isArray(data.messages)?data.messages:[];conversationPrefs={};(Array.isArray(data.preferences)?data.preferences:[]).forEach(function(x){conversationPrefs[String(x.conversation_id)]=x});startOwnerRealtime();if(chatId){await renderOwnerChat()}else renderDashboard()}catch(e){if(chatId)showChatError(e.message||'Impossible de charger la conversation.');else showToast(e.message||'Impossible de charger AnonBox.','err')}}function groupConversations(){";
+  html=html.replace(/async function loadAll\(\)\{var uid=session\.user\.id[\s\S]*?\}function groupConversations\(\)\{/m,fastLoadAll);
+
+  html=html.replace(/<style id="anonbox-v8[234]-hotfix">[\s\S]*?<meta name="anonbox-ui-build" content="8\.[234]">/g,'');
+  if(!html.includes('anonbox-v85-hotfix')) html=html.replace('</head>',CHAT_HOTFIX+'</head>');
   return html;
 }
 
 async function fetchOptimizedShell(){
-  const res=await fetch('./?__shell=23',{cache:'reload'});
+  const res=await fetch('./?__shell=24',{cache:'reload'});
   if(!res.ok) throw new Error('shell fetch failed');
   const html=optimizeHtml(await res.text());
   const headers=new Headers(res.headers);
@@ -83,6 +88,7 @@ async function refreshShellCache(){
     const cache=await caches.open(CACHE);
     const shell=await fetchOptimizedShell();
     await cache.put(SHELL_KEY,shell.clone());
+    lastShellRefresh=Date.now();
     return shell;
   }catch(e){return null}
 }
@@ -110,7 +116,7 @@ self.addEventListener('fetch',event=>{
       const cache=await caches.open(CACHE);
       const cached=await cache.match(SHELL_KEY);
       if(cached){
-        event.waitUntil(refreshShellCache());
+        if(Date.now()-lastShellRefresh>300000) event.waitUntil(refreshShellCache());
         return cached;
       }
       const fresh=await refreshShellCache();
