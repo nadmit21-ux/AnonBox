@@ -5,7 +5,7 @@
   "start_url": "./?app=1",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#f6f8fc",
-  "theme_color": "#f6f8fc",
+  "background_color": "#e9eef5",
+  "theme_color": "#e9eef5",
   "categories": ["social", "communication"]
 }
