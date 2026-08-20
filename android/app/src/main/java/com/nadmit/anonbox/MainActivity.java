@@ -1,8 +1,10 @@
 package com.nadmit.anonbox;
 
+import android.Manifest;
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
@@ -10,6 +12,7 @@ import android.provider.Settings;
 import android.view.View;
 import android.webkit.CookieManager;
 import android.webkit.JavascriptInterface;
+import android.webkit.PermissionRequest;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
@@ -27,11 +30,13 @@ public class MainActivity extends Activity {
     private static final String SUPABASE_URL = "https://ugyrgvbfwvmuhsjmjtue.supabase.co";
     private static final String SUPABASE_KEY = "sb_publishable_qHIobQFTgOOrzBttJazZQA_e5-MvmLK";
     private static final String SUPABASE_AUTH_KEY = "sb-ugyrgvbfwvmuhsjmjtue-auth-token";
-    private static final String APP_VERSION = "1.2.4";
+    private static final String APP_VERSION = "1.2.5";
     private static final int FILE_CHOOSER_REQUEST = 1001;
+    private static final int AUDIO_PERMISSION_REQUEST = 1002;
 
     private WebView webView;
     private ValueCallback<Uri[]> filePathCallback;
+    private PermissionRequest pendingAudioPermission;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -57,39 +62,17 @@ public class MainActivity extends Activity {
         boolean darkIcons = true;
 
         switch (selected) {
-            case "blue":
-                color = Color.rgb(200, 215, 229);
-                break;
-            case "green":
-                color = Color.rgb(203, 220, 207);
-                break;
-            case "gray":
-                color = Color.rgb(207, 212, 218);
-                break;
-            case "violet":
-                color = Color.rgb(214, 208, 227);
-                break;
-            case "turquoise":
-                color = Color.rgb(197, 220, 218);
-                break;
-            case "rose":
-                color = Color.rgb(223, 207, 213);
-                break;
-            case "amber":
-                color = Color.rgb(221, 210, 188);
-                break;
-            case "ocean":
-                color = Color.rgb(191, 211, 220);
-                break;
-            case "forest":
-                color = Color.rgb(197, 211, 197);
-                break;
-            case "sand":
-                color = Color.rgb(216, 208, 195);
-                break;
-            case "bordeaux":
-                color = Color.rgb(214, 198, 202);
-                break;
+            case "blue": color = Color.rgb(200, 215, 229); break;
+            case "green": color = Color.rgb(203, 220, 207); break;
+            case "gray": color = Color.rgb(207, 212, 218); break;
+            case "violet": color = Color.rgb(214, 208, 227); break;
+            case "turquoise": color = Color.rgb(197, 220, 218); break;
+            case "rose": color = Color.rgb(223, 207, 213); break;
+            case "amber": color = Color.rgb(221, 210, 188); break;
+            case "ocean": color = Color.rgb(191, 211, 220); break;
+            case "forest": color = Color.rgb(197, 211, 197); break;
+            case "sand": color = Color.rgb(216, 208, 195); break;
+            case "bordeaux": color = Color.rgb(214, 198, 202); break;
             case "night":
                 color = Color.rgb(28, 40, 48);
                 darkIcons = false;
@@ -128,7 +111,7 @@ public class MainActivity extends Activity {
         settings.setDisplayZoomControls(false);
         settings.setTextZoom(100);
         settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
-        settings.setUserAgentString(settings.getUserAgentString() + " AnonBoxApp/1.2.4");
+        settings.setUserAgentString(settings.getUserAgentString() + " AnonBoxApp/1.2.5");
 
         CookieManager cookieManager = CookieManager.getInstance();
         cookieManager.setAcceptCookie(true);
@@ -154,6 +137,34 @@ public class MainActivity extends Activity {
 
         webView.setWebChromeClient(new WebChromeClient() {
             @Override
+            public void onPermissionRequest(final PermissionRequest request) {
+                runOnUiThread(() -> {
+                    boolean asksAudio = false;
+                    for (String resource : request.getResources()) {
+                        if (PermissionRequest.RESOURCE_AUDIO_CAPTURE.equals(resource)) {
+                            asksAudio = true;
+                            break;
+                        }
+                    }
+                    if (!asksAudio) {
+                        request.deny();
+                        return;
+                    }
+                    if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+                        request.grant(new String[]{PermissionRequest.RESOURCE_AUDIO_CAPTURE});
+                    } else {
+                        pendingAudioPermission = request;
+                        requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO}, AUDIO_PERMISSION_REQUEST);
+                    }
+                });
+            }
+
+            @Override
+            public void onPermissionRequestCanceled(PermissionRequest request) {
+                if (pendingAudioPermission == request) pendingAudioPermission = null;
+            }
+
+            @Override
             public boolean onShowFileChooser(WebView webView, ValueCallback<Uri[]> filePathCallbackNew, FileChooserParams fileChooserParams) {
                 if (filePathCallback != null) filePathCallback.onReceiveValue(null);
                 filePathCallback = filePathCallbackNew;
@@ -172,7 +183,7 @@ public class MainActivity extends Activity {
                             "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
                             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                             "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-                            "audio/mpeg", "audio/mp4", "video/mp4"
+                            "audio/mpeg", "audio/mp4", "audio/webm", "audio/ogg", "video/mp4"
                     });
                 }
 
@@ -185,6 +196,19 @@ public class MainActivity extends Activity {
                 }
             }
         });
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode != AUDIO_PERMISSION_REQUEST || pendingAudioPermission == null) return;
+        PermissionRequest request = pendingAudioPermission;
+        pendingAudioPermission = null;
+        if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            request.grant(new String[]{PermissionRequest.RESOURCE_AUDIO_CAPTURE});
+        } else {
+            request.deny();
+        }
     }
 
     private void refreshFirebaseTokenIfConfigured() {
@@ -227,16 +251,13 @@ public class MainActivity extends Activity {
 
     private boolean handleNavigation(Uri uri) {
         if (uri == null) return false;
-
         String scheme = uri.getScheme() == null ? "" : uri.getScheme().toLowerCase();
         String host = uri.getHost() == null ? "" : uri.getHost().toLowerCase();
         String path = uri.getPath() == null ? "" : uri.getPath();
 
         if (("https".equals(scheme) || "http".equals(scheme))
                 && "nadmit21-ux.github.io".equals(host)
-                && path.startsWith("/AnonBox/")) {
-            return false;
-        }
+                && path.startsWith("/AnonBox/")) return false;
 
         if ("about".equals(scheme) || "data".equals(scheme) || "blob".equals(scheme)) return false;
 
@@ -304,6 +325,10 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onDestroy() {
+        if (pendingAudioPermission != null) {
+            pendingAudioPermission.deny();
+            pendingAudioPermission = null;
+        }
         if (webView != null) {
             webView.stopLoading();
             webView.destroy();
