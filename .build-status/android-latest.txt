@@ -1,5 +1,5 @@
 status=success
-source_sha=2d26b27c4dbbbe7d8348457e9129ec812681dcbd
-run_id=32391218885
-version=1.2.2
+source_sha=b477edd09a103c3a80fe2c142d7f45dc2df57ec6
+run_id=32392566887
+version=1.2.3
 firebase=enabled
