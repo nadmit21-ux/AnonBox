@@ -9,6 +9,7 @@ import android.os.Bundle;
 import android.provider.Settings;
 import android.view.View;
 import android.webkit.CookieManager;
+import android.webkit.JavascriptInterface;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
@@ -26,7 +27,7 @@ public class MainActivity extends Activity {
     private static final String SUPABASE_URL = "https://ugyrgvbfwvmuhsjmjtue.supabase.co";
     private static final String SUPABASE_KEY = "sb_publishable_qHIobQFTgOOrzBttJazZQA_e5-MvmLK";
     private static final String SUPABASE_AUTH_KEY = "sb-ugyrgvbfwvmuhsjmjtue-auth-token";
-    private static final String APP_VERSION = "1.2.2";
+    private static final String APP_VERSION = "1.2.3";
     private static final int FILE_CHOOSER_REQUEST = 1001;
 
     private WebView webView;
@@ -35,23 +36,59 @@ public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        int shellColor = Color.rgb(233, 238, 245);
-        getWindow().setStatusBarColor(shellColor);
-        getWindow().setNavigationBarColor(shellColor);
-        getWindow().getDecorView().setSystemUiVisibility(
-                View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR | View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
-        );
+        applyShellTheme("mix");
 
         NotificationHelper.createChannels(this);
         NotificationHelper.requestPermissionIfNeeded(this);
 
         webView = new WebView(this);
-        webView.setBackgroundColor(shellColor);
+        webView.setBackgroundColor(Color.rgb(202, 216, 216));
+        webView.addJavascriptInterface(new ThemeBridge(), "AnonBoxThemeBridge");
         setContentView(webView);
 
         configureWebView();
         refreshFirebaseTokenIfConfigured();
         loadInitialUrl(getIntent());
+    }
+
+    private void applyShellTheme(String theme) {
+        String selected = theme == null ? "mix" : theme;
+        int color;
+        boolean darkIcons = true;
+
+        switch (selected) {
+            case "blue":
+                color = Color.rgb(200, 215, 229);
+                break;
+            case "green":
+                color = Color.rgb(203, 220, 207);
+                break;
+            case "gray":
+                color = Color.rgb(207, 212, 218);
+                break;
+            case "night":
+                color = Color.rgb(28, 40, 48);
+                darkIcons = false;
+                break;
+            case "mix":
+            default:
+                color = Color.rgb(202, 216, 216);
+                break;
+        }
+
+        getWindow().setStatusBarColor(color);
+        getWindow().setNavigationBarColor(color);
+        getWindow().getDecorView().setSystemUiVisibility(
+                darkIcons ? (View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR | View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR) : 0
+        );
+        if (webView != null) webView.setBackgroundColor(color);
+    }
+
+    private class ThemeBridge {
+        @JavascriptInterface
+        public void setTheme(final String theme) {
+            runOnUiThread(() -> applyShellTheme(theme));
+        }
     }
 
     private void configureWebView() {
@@ -67,7 +104,7 @@ public class MainActivity extends Activity {
         settings.setDisplayZoomControls(false);
         settings.setTextZoom(100);
         settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
-        settings.setUserAgentString(settings.getUserAgentString() + " AnonBoxApp/1.2.2");
+        settings.setUserAgentString(settings.getUserAgentString() + " AnonBoxApp/1.2.3");
 
         CookieManager cookieManager = CookieManager.getInstance();
         cookieManager.setAcceptCookie(true);
