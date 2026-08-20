@@ -1,5 +1,5 @@
-AnonBox web UI v7.1
-13 selectable themes: Mixte, Bleu, Vert, Gris, Nuit, Violet, Turquoise, Rose, Ambre, Ocean, Foret, Sable, Bordeaux
-Theme choice stored locally on device
-Anonymous profile features unchanged
-Cache: anonbox-v18
+AnonBox web UI v8
+Voice messages with recording and inline playback
+View-once text and attachments with recipient-only one-time opening
+13 selectable themes preserved
+Cache: anonbox-v19
