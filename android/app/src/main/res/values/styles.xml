@@ -1,11 +1,11 @@
 <resources>
     <style name="Theme.AnonBox" parent="android:style/Theme.Material.Light.NoActionBar">
         <item name="android:fontFamily">sans</item>
-        <item name="android:windowLightStatusBar">false</item>
-        <item name="android:windowLightNavigationBar">false</item>
-        <item name="android:statusBarColor">#0A1019</item>
-        <item name="android:navigationBarColor">#0A1019</item>
-        <item name="android:windowBackground">#0A1019</item>
-        <item name="android:colorAccent">#7C5CFF</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
+        <item name="android:statusBarColor">#F6F8FC</item>
+        <item name="android:navigationBarColor">#F6F8FC</item>
+        <item name="android:windowBackground">#F6F8FC</item>
+        <item name="android:colorAccent">#6758E8</item>
     </style>
 </resources>
