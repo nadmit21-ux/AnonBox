@@ -1,4 +1,4 @@
-const CACHE='anonbox-v11';
+const CACHE='anonbox-v12';
 const SUPABASE_URL='https://ugyrgvbfwvmuhsjmjtue.supabase.co';
 const SUPABASE_KEY='sb_publishable_qHIobQFTgOOrzBttJazZQA_e5-MvmLK';
 const LEGACY_API=SUPABASE_URL+'/functions/v1/anonbox-api';
