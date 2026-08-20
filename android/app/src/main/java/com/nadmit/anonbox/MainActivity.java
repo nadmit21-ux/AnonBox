@@ -25,7 +25,7 @@ public class MainActivity extends Activity {
     private static final String SUPABASE_URL = "https://ugyrgvbfwvmuhsjmjtue.supabase.co";
     private static final String SUPABASE_KEY = "sb_publishable_qHIobQFTgOOrzBttJazZQA_e5-MvmLK";
     private static final String SUPABASE_AUTH_KEY = "sb-ugyrgvbfwvmuhsjmjtue-auth-token";
-    private static final String APP_VERSION = "1.1.0";
+    private static final String APP_VERSION = "1.2.0";
     private static final int FILE_CHOOSER_REQUEST = 1001;
 
     private WebView webView;
@@ -34,14 +34,14 @@ public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        getWindow().setStatusBarColor(Color.rgb(7, 10, 18));
-        getWindow().setNavigationBarColor(Color.rgb(7, 10, 18));
+        getWindow().setStatusBarColor(Color.rgb(10, 16, 25));
+        getWindow().setNavigationBarColor(Color.rgb(10, 16, 25));
 
         NotificationHelper.createChannels(this);
         NotificationHelper.requestPermissionIfNeeded(this);
 
         webView = new WebView(this);
-        webView.setBackgroundColor(Color.rgb(7, 10, 18));
+        webView.setBackgroundColor(Color.rgb(10, 16, 25));
         setContentView(webView);
 
         configureWebView();
@@ -60,8 +60,9 @@ public class MainActivity extends Activity {
         settings.setSupportMultipleWindows(false);
         settings.setBuiltInZoomControls(false);
         settings.setDisplayZoomControls(false);
+        settings.setTextZoom(100);
         settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
-        settings.setUserAgentString(settings.getUserAgentString() + " AnonBoxApp/1.1");
+        settings.setUserAgentString(settings.getUserAgentString() + " AnonBoxApp/1.2");
 
         CookieManager cookieManager = CookieManager.getInstance();
         cookieManager.setAcceptCookie(true);
@@ -97,7 +98,16 @@ public class MainActivity extends Activity {
                 } catch (Exception ignored) {
                     intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
                     intent.addCategory(Intent.CATEGORY_OPENABLE);
-                    intent.setType("image/*");
+                    intent.setType("*/*");
+                    intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, false);
+                    intent.putExtra(Intent.EXTRA_MIME_TYPES, new String[]{
+                            "image/jpeg", "image/png", "image/webp", "image/gif",
+                            "application/pdf", "text/plain", "application/zip",
+                            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                            "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                            "audio/mpeg", "audio/mp4", "video/mp4"
+                    });
                 }
 
                 try {
