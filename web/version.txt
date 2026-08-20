@@ -1,7 +1,8 @@
-AnonBox web UI v8.4
-Navigation shell is now cache-first for instant screen changes
-No more HTML rewrite on every navigation
-No more forced no-store navigation fetches
+AnonBox web UI v8.5
+Cache-first navigation shell for faster screen changes
+Owner dashboard data bundled into one Supabase RPC
+HTML optimization now happens when refreshing the shell, not on every navigation
+Background shell refresh limited to about once every 5 minutes
 Redundant anonymous-profile notice remains removed
 Compact chat controls, voice, view-once and 13 themes preserved
-Cache: anonbox-v23
+Cache: anonbox-v24
