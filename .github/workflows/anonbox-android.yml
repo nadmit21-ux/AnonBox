@@ -70,11 +70,12 @@ jobs:
         if: always()
         run: |
           mkdir -p .build-status
+          VERSION_NAME=$(grep -m1 "versionName" android/app/build.gradle | sed -E "s/.*versionName[[:space:]]+'([^']+)'.*/\1/")
           {
             echo "status=${{ steps.build_apk.outcome }}"
             echo "source_sha=${{ github.sha }}"
             echo "run_id=${{ github.run_id }}"
-            echo "version=1.1.0"
+            echo "version=${VERSION_NAME:-unknown}"
             echo "firebase=enabled"
           } > .build-status/android-latest.txt
           git config user.name "AnonBox CI"
