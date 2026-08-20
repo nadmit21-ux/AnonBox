@@ -27,7 +27,7 @@ public class MainActivity extends Activity {
     private static final String SUPABASE_URL = "https://ugyrgvbfwvmuhsjmjtue.supabase.co";
     private static final String SUPABASE_KEY = "sb_publishable_qHIobQFTgOOrzBttJazZQA_e5-MvmLK";
     private static final String SUPABASE_AUTH_KEY = "sb-ugyrgvbfwvmuhsjmjtue-auth-token";
-    private static final String APP_VERSION = "1.2.3";
+    private static final String APP_VERSION = "1.2.4";
     private static final int FILE_CHOOSER_REQUEST = 1001;
 
     private WebView webView;
@@ -65,6 +65,30 @@ public class MainActivity extends Activity {
                 break;
             case "gray":
                 color = Color.rgb(207, 212, 218);
+                break;
+            case "violet":
+                color = Color.rgb(214, 208, 227);
+                break;
+            case "turquoise":
+                color = Color.rgb(197, 220, 218);
+                break;
+            case "rose":
+                color = Color.rgb(223, 207, 213);
+                break;
+            case "amber":
+                color = Color.rgb(221, 210, 188);
+                break;
+            case "ocean":
+                color = Color.rgb(191, 211, 220);
+                break;
+            case "forest":
+                color = Color.rgb(197, 211, 197);
+                break;
+            case "sand":
+                color = Color.rgb(216, 208, 195);
+                break;
+            case "bordeaux":
+                color = Color.rgb(214, 198, 202);
                 break;
             case "night":
                 color = Color.rgb(28, 40, 48);
@@ -104,7 +128,7 @@ public class MainActivity extends Activity {
         settings.setDisplayZoomControls(false);
         settings.setTextZoom(100);
         settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
-        settings.setUserAgentString(settings.getUserAgentString() + " AnonBoxApp/1.2.3");
+        settings.setUserAgentString(settings.getUserAgentString() + " AnonBoxApp/1.2.4");
 
         CookieManager cookieManager = CookieManager.getInstance();
         cookieManager.setAcceptCookie(true);
