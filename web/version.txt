@@ -1,5 +1,5 @@
-AnonBox web UI v5
-Conversation management: pin, mute and archive
-Muted conversations skip Android push enqueue
-Includes UX v4 scroll, unread, swipe-to-reply and in-app feedback
-Cache: anonbox-v13
+AnonBox web UI v6
+Light interface by default
+Anonymous visitors: no profile, custom local anonymous profile, or generated anonymous profile with image
+Anonymous account identity remains hidden
+Cache: anonbox-v14
