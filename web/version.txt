@@ -1,4 +1,6 @@
-AnonBox web UI v6.2
-Balanced light interface: blue-gray background, off-white surfaces, softer contrast
+AnonBox web UI v7
+Default theme: mixed blue-green-gray with no pure-white surfaces
+User-selectable themes: Mixte, Bleu, Vert, Gris, Nuit
+Theme choice stored locally on device
 Anonymous profile features unchanged
-Cache: anonbox-v16
+Cache: anonbox-v17
