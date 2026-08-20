@@ -1,3 +1,0 @@
-anonymous-profiles-light-v6-deployed
-source=65c9640e76a8fe64f8206bf6b5e7263ecdb94fa1
-url=https://nadmit21-ux.github.io/AnonBox/
